@@ -171,3 +171,141 @@ Eval compute in insert_nat 5 h2.
 Eval compute in heap_ordered_nat (insert_nat 5 h2).
 Eval compute in elements_nat (insert_nat 5 h2).
 Eval compute in insert_permutation 5 h2.
+
+(* ---------- Proof that every singleton node is an ordered pairing heap ---------- *)
+Lemma singleton_node_heap_ordered (x : nat) :
+  heap_ordered_nat (PH.Node _ x []) = true.
+Proof. simpl. reflexivity. Qed.
+
+(* ---------- Merging proof ordered ---------- *)
+Lemma meld_preserves_heap_order :
+  forall h1 h2 : HeapNat,
+    heap_ordered_nat h1 = true ->
+    heap_ordered_nat h2 = true ->
+    heap_ordered_nat (meld_nat h1 h2) = true.
+Proof.
+  intros h1 h2 Hord1 Hord2.
+  unfold meld_nat.   
+  unfold PH.meld.
+  destruct h1 as [| x1 hs1].
+  - (* h1 = Empty *)
+    simpl. assumption.
+  - destruct h2 as [| x2 hs2].
+    + (* h2 = Empty *)
+      simpl. assumption.
+    + (* Both heaps non-empty *)
+      simpl.
+      destruct (Nat.leb x1 x2) eqn:Hle.
+      * (* Case: x1 <= x2 *)
+        admit.
+      * (* Case: x1 > x2 *)
+        admit.
+Admitted.
+
+(* ---------- Merging proof flatten elements ---------- *)
+Lemma meld_permutation_elements :
+  forall h1 h2 : HeapNat,
+    Permutation (elements_nat (meld_nat h1 h2))
+                (elements_nat h1 ++ elements_nat h2).
+Proof.
+  intros h1 h2.
+  unfold meld_nat.
+  unfold PH.meld.
+  destruct h1 as [| x1 hs1].
+  - (* Case: h1 = Empty *)
+    simpl. apply Permutation_refl.
+  - destruct h2 as [| x2 hs2].
+    + (* Case: h2 = Empty *)
+      simpl. rewrite app_nil_r. apply Permutation_refl.
+    + (* Both heaps non-empty *)
+      simpl.
+      destruct (Nat.leb x1 x2) eqn:Hle.
+      * (* Case: x1 <= x2 *)
+        admit.
+      * (* Case: x1 > x2 *)
+        admit.
+Admitted.
+
+(* ---------- Inserting proof ordered ---------- *)
+Lemma insert_preserves_heap_order :
+  forall (x : nat) (h : HeapNat),
+    heap_ordered_nat h = true ->
+    heap_ordered_nat (insert_nat x h) = true.
+Proof.
+  intros x h Hord.
+  unfold insert_nat.
+  unfold PH.insert.
+  unfold meld_nat.
+  unfold PH.meld.
+  destruct h as [| xh hsl].
+  - (* Case: h = Empty *)
+    simpl. apply singleton_node_heap_ordered with (x := x).
+  - simpl.
+    destruct (Nat.leb x xh) eqn:Hle.
+    + (* Case: x <= xh *)
+      (* Node x (Node xh hsl :: []) *)
+      admit.
+    + (* Case: x > xh *)
+      (* Node xh (Node x [] :: hsl) *)
+      admit.
+Admitted.
+
+(* ---------- Inserting proof elements ---------- *)
+Lemma insert_permutation_elements :
+  forall (x : nat) (h : HeapNat),
+    Permutation (elements_nat (insert_nat x h))
+                (x :: elements_nat h).
+Proof.
+  intros x h.
+  unfold insert_nat.
+  unfold PH.insert.
+  unfold meld_nat.
+  unfold PH.meld.
+  destruct h as [| xh hsl].
+  - (* Case: h = Empty *)
+    simpl. apply Permutation_refl.
+  - simpl.
+    destruct (Nat.leb x xh) eqn:Hle.
+    + (* Case: x <= xh *)
+      (* Node x (Node xh hsl :: []) *)
+      admit.
+    + (* Case: x > xh *)
+      (* Node xh (Node x [] :: hsl) *)
+      admit.
+Admitted.
+
+(* ---------- Delete min proof ordered ---------- *)
+Lemma delete_min_preserves_heap_order :
+  forall h : HeapNat,
+    heap_ordered_nat h = true ->
+    heap_ordered_nat (delete_min_nat h) = true.
+Proof.
+  intros h Hord.
+  unfold delete_min_nat.
+  unfold PH.delete_min.
+  destruct h as [| x hs].
+  - (* Case: h = Empty *)
+    simpl. reflexivity.
+  - (* Case: Node x hs *)
+    simpl.
+    (* recursive case on pairwise_meld hs *)
+    admit.
+Admitted.
+
+(* ---------- Delete min proof elements ---------- *)
+Lemma delete_min_permutation_elements :
+  forall h : HeapNat,
+    Permutation (elements_nat (delete_min_nat h))
+                (tl (elements_nat h)).
+Proof.
+  intros h.
+  unfold delete_min_nat.
+  unfold PH.delete_min.
+  destruct h as [| x hs].
+  - (* Case: h = Empty *)
+    simpl. apply Permutation_refl.
+  - (* Case: Node x hs *)
+    simpl.
+    (* recursive case on pairwise_meld hs *)
+    admit.
+Admitted.
