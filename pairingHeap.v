@@ -2,6 +2,7 @@ Require Import List.
 Require Import Bool.
 Require Import Coq.Arith.Arith.
 Require Import Coq.Sorting.Permutation.
+From Coq Require Import Lia.
 Import ListNotations.
 
 (* ---------- PairingHeap Module Definition ---------- *)
@@ -177,6 +178,8 @@ Lemma singleton_node_heap_ordered (x : nat) :
   heap_ordered_nat (PH.Node _ x []) = true.
 Proof. simpl. reflexivity. Qed.
 
+
+
 (* ---------- Merging proof ordered ---------- *)
 Lemma meld_preserves_heap_order :
   forall h1 h2 : HeapNat,
@@ -197,10 +200,26 @@ Proof.
       simpl.
       destruct (Nat.leb x1 x2) eqn:Hle.
       * (* Case: x1 <= x2 *)
-        admit.
+        simpl. apply andb_true_intro.
+        split.
+        -- apply andb_true_intro.
+           split.
+           ** apply Hle.
+           ** apply Hord2.
+        -- simpl in Hord1.
+           apply Hord1.
       * (* Case: x1 > x2 *)
-        admit.
-Admitted.
+        simpl. apply andb_true_intro.
+        split.
+        -- apply andb_true_intro.
+           split.
+           ** Search leb false.
+              apply leb_correct.
+              apply leb_complete_conv in Hle.
+              lia.
+           ** apply Hord1.
+        -- apply Hord2.
+Qed.
 
 (* ---------- Merging proof flatten elements ---------- *)
 Lemma meld_permutation_elements :
@@ -233,22 +252,11 @@ Lemma insert_preserves_heap_order :
     heap_ordered_nat (insert_nat x h) = true.
 Proof.
   intros x h Hord.
-  unfold insert_nat.
-  unfold PH.insert.
-  unfold meld_nat.
-  unfold PH.meld.
-  destruct h as [| xh hsl].
-  - (* Case: h = Empty *)
-    simpl. apply singleton_node_heap_ordered with (x := x).
-  - simpl.
-    destruct (Nat.leb x xh) eqn:Hle.
-    + (* Case: x <= xh *)
-      (* Node x (Node xh hsl :: []) *)
-      admit.
-    + (* Case: x > xh *)
-      (* Node xh (Node x [] :: hsl) *)
-      admit.
-Admitted.
+  unfold insert_nat, PH.insert.
+  apply meld_preserves_heap_order.
+  - apply singleton_node_heap_ordered.
+  - exact Hord.
+Qed.
 
 (* ---------- Inserting proof elements ---------- *)
 Lemma insert_permutation_elements :
