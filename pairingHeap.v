@@ -229,22 +229,27 @@ Lemma meld_permutation_elements :
                 (elements_nat h1 ++ elements_nat h2).
 Proof.
   intros h1 h2.
-  unfold meld_nat.
-  unfold PH.meld.
-  destruct h1 as [| x1 hs1].
-  - (* Case: h1 = Empty *)
-    simpl. apply Permutation_refl.
-  - destruct h2 as [| x2 hs2].
+  unfold meld_nat, PH.meld.
+  destruct h1 as [| x1 hs1]; simpl.
+  - (* Case: h1 = Empty *) 
+    apply Permutation_refl.
+  - destruct h2 as [| x2 hs2]; simpl.
     + (* Case: h2 = Empty *)
-      simpl. rewrite app_nil_r. apply Permutation_refl.
-    + (* Both heaps non-empty *)
-      simpl.
-      destruct (Nat.leb x1 x2) eqn:Hle.
-      * (* Case: x1 <= x2 *)
-        admit.
-      * (* Case: x1 > x2 *)
-        admit.
-Admitted.
+      rewrite app_nil_r; apply Permutation_refl.
+    + (* Case: both heaps non-empty *)
+      destruct (Nat.leb x1 x2) eqn:H; simpl.
+      * (* x1 <= x2 *)
+        apply perm_skip.
+        apply (Permutation_app_comm
+                 (x2 :: flat_map elements_nat hs2)
+                 (flat_map elements_nat hs1)).
+      * (* x1 > x2 *)
+        apply (perm_trans
+                 (l := x2 :: x1 :: flat_map elements_nat hs1 ++ flat_map elements_nat hs2)
+                 (l' := x1 :: x2 :: flat_map elements_nat hs1 ++ flat_map elements_nat hs2)).
+        -- apply perm_swap.
+        -- apply perm_skip. apply Permutation_middle.
+Qed.
 
 (* ---------- Inserting proof ordered ---------- *)
 Lemma insert_preserves_heap_order :
@@ -266,19 +271,11 @@ Lemma insert_permutation_elements :
                 (x :: elements_nat h).
 Proof.
   intros x h.
-  unfold insert_nat, PH.insert, meld_nat, PH.meld.
-  destruct h as [| xh hsl].
-  - (* h = Empty *) 
-    simpl; apply Permutation_refl.
-  - simpl.
-    destruct (Nat.leb x xh) eqn:Hle; simpl.
-    + (* x ≤ xh: elements = x :: xh :: flat_map … ++ [] *)
-      rewrite app_nil_r. 
-      apply Permutation_refl.
-    + (* x > xh: elements = xh :: x :: flat_map … *)
-      apply perm_swap.
+  unfold insert_nat, PH.insert.
+  apply perm_trans with (l' := elements_nat (PH.Node _ x []) ++ elements_nat h).
+  - apply meld_permutation_elements.
+  - simpl. apply Permutation_refl.
 Qed.
-
 
 
 (* ---------- Delete min proof ordered ---------- *)
