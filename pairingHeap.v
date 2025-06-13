@@ -4,6 +4,7 @@ Require Import Coq.Arith.Arith.
 Require Import Coq.Sorting.Permutation.
 From Coq Require Import Lia.
 Import ListNotations.
+Require Import Coq.Sorting.Permutation.
 
 (* ---------- PairingHeap Module Definition ---------- *)
 Module pairingHeap.
@@ -265,22 +266,20 @@ Lemma insert_permutation_elements :
                 (x :: elements_nat h).
 Proof.
   intros x h.
-  unfold insert_nat.
-  unfold PH.insert.
-  unfold meld_nat.
-  unfold PH.meld.
+  unfold insert_nat, PH.insert, meld_nat, PH.meld.
   destruct h as [| xh hsl].
-  - (* Case: h = Empty *)
-    simpl. apply Permutation_refl.
+  - (* h = Empty *) 
+    simpl; apply Permutation_refl.
   - simpl.
-    destruct (Nat.leb x xh) eqn:Hle.
-    + (* Case: x <= xh *)
-      (* Node x (Node xh hsl :: []) *)
-      admit.
-    + (* Case: x > xh *)
-      (* Node xh (Node x [] :: hsl) *)
-      admit.
-Admitted.
+    destruct (Nat.leb x xh) eqn:Hle; simpl.
+    + (* x ≤ xh: elements = x :: xh :: flat_map … ++ [] *)
+      rewrite app_nil_r. 
+      apply Permutation_refl.
+    + (* x > xh: elements = xh :: x :: flat_map … *)
+      apply perm_swap.
+Qed.
+
+
 
 (* ---------- Delete min proof ordered ---------- *)
 Lemma delete_min_preserves_heap_order :
