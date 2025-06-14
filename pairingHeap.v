@@ -33,23 +33,11 @@ Definition meld (h1 h2 : Heap) : Heap :=
       else Node x2 (h1 :: hs2)
   end.
 
-(* Fixpoint pairwise_meld (hs : list Heap) : Heap := *)
-(*   match hs with *)
-(*   | [] => Empty *)
-(*   | [h] => h *)
-(*   | h1 :: h2 :: hs' => meld (meld h1 h2) (pairwise_meld hs') *)
-(*   end. *)
-
 Fixpoint pairwise_meld (hs : list Heap) : Heap :=
   match hs with
   | [] => Empty
   | h::hs => meld h (pairwise_meld hs)
   end.
-
-
-
-
-
 
 Definition delete_min (h : Heap) : Heap :=
   match h with
@@ -59,7 +47,6 @@ Definition delete_min (h : Heap) : Heap :=
 
 Definition insert (x : A) (h : Heap) : Heap :=
   meld (Node x []) h.
-
 
 (* ---------- Helper functions ---------- *)
 Fixpoint heap_ordered (h : Heap) : bool :=
@@ -78,7 +65,6 @@ Fixpoint elements (h : Heap) : list A :=
   | Empty => []
   | Node x hs => x :: flat_map elements hs
   end.
-
 
 End Defs.
 End pairingHeap.
@@ -128,7 +114,7 @@ Definition h_bad : HeapNat :=
     ]
   ].
 
-(* ---------- Auxuliary lemmas functions ---------- *)
+(* ---------- Auxuliary lemmas ---------- *)
 Definition list_min (l : list nat) : option nat :=
   match l with
   | [] => None
@@ -172,7 +158,6 @@ Admitted.
 Lemma singleton_node_heap_ordered (x : nat) :
   heap_ordered_nat (PH.Node _ x []) = true.
 Proof. simpl. reflexivity. Qed.
-
 
 (* ---------- Merging proof ordered ---------- *)
 Lemma meld_preserves_heap_order :
@@ -269,7 +254,6 @@ Proof.
 Qed.
 
 (* ---------- Delete min proof ordered ---------- *)
-
 Lemma pairwise_meld_preserves_heap_order hs :
   Forall (fun h => heap_ordered_nat h = true) hs ->
   heap_ordered_nat (pairwise_meld_nat hs) = true.
@@ -309,7 +293,6 @@ Proof.
 Qed.
 
 (* ---------- Delete min proof elements ---------- *)
-
 Lemma pairwise_meld_permutation_elements hs :
   Permutation (elements_nat (pairwise_meld_nat hs))
     (flat_map elements_nat hs).
