@@ -33,12 +33,23 @@ Definition meld (h1 h2 : Heap) : Heap :=
       else Node x2 (h1 :: hs2)
   end.
 
+(* Fixpoint pairwise_meld (hs : list Heap) : Heap := *)
+(*   match hs with *)
+(*   | [] => Empty *)
+(*   | [h] => h *)
+(*   | h1 :: h2 :: hs' => meld (meld h1 h2) (pairwise_meld hs') *)
+(*   end. *)
+
 Fixpoint pairwise_meld (hs : list Heap) : Heap :=
   match hs with
   | [] => Empty
-  | [h] => h
-  | h1 :: h2 :: hs' => meld (meld h1 h2) (pairwise_meld hs')
+  | h::hs => meld h (pairwise_meld hs)
   end.
+
+
+
+
+
 
 Definition delete_min (h : Heap) : Heap :=
   match h with
@@ -81,31 +92,9 @@ Definition find_min_nat := PH.find_min nat.
 Definition meld_nat := PH.meld nat Nat.leb.
 Definition delete_min_nat := PH.delete_min nat Nat.leb.
 Definition insert_nat := PH.insert nat Nat.leb.
+Definition pairwise_meld_nat := PH.pairwise_meld nat Nat.leb.
 
-(* ---------- Verification functions ---------- *)
-Definition list_min (l : list nat) : option nat :=
-  match l with
-  | [] => None
-  | x :: xs => Some (fold_left Nat.min xs x)
-  end.
-
-Definition verify_find_min_correct (h : HeapNat) : bool :=
-  match find_min_nat h, list_min (elements_nat h) with
-  | Some a, Some b => Nat.eqb a b
-  | None, None => true
-  | _, _ => false
-  end.
-
-Definition meld_permutation (h1 h2 : HeapNat) : Prop :=
-  Permutation (elements_nat (meld_nat h1 h2)) (elements_nat h1 ++ elements_nat h2).
-
-Definition delete_min_permutation (h1 : HeapNat) : Prop :=
-  Permutation (elements_nat (delete_min_nat h1)) (tl (elements_nat h1)).
-
-Definition insert_permutation (x : nat) (h1 : HeapNat) : Prop :=
-  Permutation (elements_nat (insert_nat x h1)) (x :: elements_nat h1).
-
-(* ---------- Examples of pairing heaps functions ---------- *)
+(* ---------- Examples of pairing heaps ---------- *)
 Definition h0 : HeapNat := PH.Empty _.
 Definition h1 : HeapNat := PH.Node _ 1 [].
 Definition h2 : HeapNat :=
@@ -139,46 +128,50 @@ Definition h_bad : HeapNat :=
     ]
   ].
 
-(* ---------- Calls of helper functions ---------- *)
-Eval compute in heap_ordered_nat h0.
-Eval compute in heap_ordered_nat h1.
-Eval compute in heap_ordered_nat h2.
-Eval compute in heap_ordered_nat h3.
-Eval compute in heap_ordered_nat h_bad.
+(* ---------- Auxuliary lemmas functions ---------- *)
+Definition list_min (l : list nat) : option nat :=
+  match l with
+  | [] => None
+  | x :: xs => Some (fold_left Nat.min xs x)
+  end.
 
-Eval compute in elements_nat h2.
-Eval compute in elements_nat h3.
-Eval compute in elements_nat h_bad.
+Lemma forallb_Forall {A:Type} (p : A -> bool) (ls : list A) :
+  forallb p ls = true <-> Forall (fun x => p x = true) ls.
+Proof.
+  induction ls as [| x xs IH]; simpl.
+  - split; intros _; constructor.
+  - split; intros H.
+    + apply andb_true_iff in H as [Hx Hxs].
+      constructor; [exact Hx | apply IH; exact Hxs].
+    + inversion H as [| ? ? Hx Hxs].
+      apply IH in Hxs.
+      apply andb_true_iff; split; assumption.
+Qed.
 
-(* ---------- Verification for findMin ---------- *)
-Eval compute in find_min_nat h3.
-Eval compute in elements_nat h3.
-Eval compute in (find_min_nat h3 = list_min (elements_nat h3)).
-Eval compute in (find_min_nat h0 = list_min (elements_nat h0)).
-Eval compute in verify_find_min_correct h3.
+Lemma Forall_weaken {A:Type} (P Q : A -> Prop) (ls : list A) :
+  (forall x, P x -> Q x) ->
+  Forall P ls ->
+  Forall Q ls.
+Proof.
+  intros HPQ H.
+  induction H as [| x xs Hx Hxs IH].
+  - constructor.
+  - constructor.
+    + apply HPQ. exact Hx.
+    + apply IH.
+Qed.
 
-(* ---------- Verification for meld ---------- *)
-Eval compute in meld_nat h2 h3.
-Eval compute in heap_ordered_nat (meld_nat h2 h3).
-Eval compute in meld_permutation h2 h3.
-
-(* ---------- Verification for delete min ---------- *)
-Eval compute in delete_min_nat h2.
-Eval compute in heap_ordered_nat (delete_min_nat h2).
-Eval compute in elements_nat (delete_min_nat h2).
-Eval compute in delete_min_permutation h2.
-
-(* ---------- Verification for insert ---------- *)
-Eval compute in insert_nat 5 h2.
-Eval compute in heap_ordered_nat (insert_nat 5 h2).
-Eval compute in elements_nat (insert_nat 5 h2).
-Eval compute in insert_permutation 5 h2.
+Lemma find_mind_correct_Some h a :
+  heap_ordered_nat h = true ->
+  find_min_nat h = Some a ->
+  list_min (elements_nat h) = Some a.
+Proof.
+Admitted.
 
 (* ---------- Proof that every singleton node is an ordered pairing heap ---------- *)
 Lemma singleton_node_heap_ordered (x : nat) :
   heap_ordered_nat (PH.Node _ x []) = true.
 Proof. simpl. reflexivity. Qed.
-
 
 
 (* ---------- Merging proof ordered ---------- *)
@@ -189,7 +182,7 @@ Lemma meld_preserves_heap_order :
     heap_ordered_nat (meld_nat h1 h2) = true.
 Proof.
   intros h1 h2 Hord1 Hord2.
-  unfold meld_nat.   
+  unfold meld_nat.
   unfold PH.meld.
   destruct h1 as [| x1 hs1].
   - (* h1 = Empty *)
@@ -231,8 +224,8 @@ Proof.
   intros h1 h2.
   unfold meld_nat, PH.meld.
   destruct h1 as [| x1 hs1]; simpl.
-  - (* Case: h1 = Empty *) 
-    apply Permutation_refl.
+  - (* Case: h1 = Empty *)
+    reflexivity.
   - destruct h2 as [| x2 hs2]; simpl.
     + (* Case: h2 = Empty *)
       rewrite app_nil_r; apply Permutation_refl.
@@ -244,9 +237,7 @@ Proof.
                  (x2 :: flat_map elements_nat hs2)
                  (flat_map elements_nat hs1)).
       * (* x1 > x2 *)
-        apply (perm_trans
-                 (l := x2 :: x1 :: flat_map elements_nat hs1 ++ flat_map elements_nat hs2)
-                 (l' := x1 :: x2 :: flat_map elements_nat hs1 ++ flat_map elements_nat hs2)).
+        transitivity (x1 :: x2 :: flat_map elements_nat hs1 ++ flat_map elements_nat hs2).
         -- apply perm_swap.
         -- apply perm_skip. apply Permutation_middle.
 Qed.
@@ -277,8 +268,20 @@ Proof.
   - simpl. apply Permutation_refl.
 Qed.
 
-
 (* ---------- Delete min proof ordered ---------- *)
+
+Lemma pairwise_meld_preserves_heap_order hs :
+  Forall (fun h => heap_ordered_nat h = true) hs ->
+  heap_ordered_nat (pairwise_meld_nat hs) = true.
+Proof.
+  induction hs as [ | h hs]; simpl; auto.
+  intros HF.
+  apply meld_preserves_heap_order.
+  - apply Forall_inv in HF; assumption.
+  - apply IHhs.
+    apply Forall_inv_tail in HF; assumption.
+Qed.
+
 Lemma delete_min_preserves_heap_order :
   forall h : HeapNat,
     heap_ordered_nat h = true ->
@@ -292,11 +295,34 @@ Proof.
     simpl. reflexivity.
   - (* Case: Node x hs *)
     simpl.
-    (* recursive case on pairwise_meld hs *)
-    admit.
-Admitted.
+    apply pairwise_meld_preserves_heap_order.
+    simpl in Hord.
+    apply forallb_Forall in Hord.
+    eapply Forall_weaken.
+    2: { apply Hord. }
+    clear.
+    intros h Hh. simpl in Hh.
+    destruct h ; auto.
+    apply andb_prop in Hh.
+    destruct Hh as [_ Hh].
+    assumption.
+Qed.
 
 (* ---------- Delete min proof elements ---------- *)
+
+Lemma pairwise_meld_permutation_elements hs :
+  Permutation (elements_nat (pairwise_meld_nat hs))
+    (flat_map elements_nat hs).
+Proof.
+  induction hs as [ | h hs].
+  - simpl. reflexivity.
+  - simpl.
+    transitivity (elements_nat h ++ elements_nat (pairwise_meld_nat hs)).
+    + apply meld_permutation_elements.
+    + rewrite IHhs.
+      reflexivity.
+Qed.
+
 Lemma delete_min_permutation_elements :
   forall h : HeapNat,
     Permutation (elements_nat (delete_min_nat h))
@@ -309,7 +335,5 @@ Proof.
   - (* Case: h = Empty *)
     simpl. apply Permutation_refl.
   - (* Case: Node x hs *)
-    simpl.
-    (* recursive case on pairwise_meld hs *)
-    admit.
-Admitted.
+    simpl. apply pairwise_meld_permutation_elements.
+Qed.
