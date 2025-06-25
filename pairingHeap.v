@@ -66,6 +66,19 @@ Fixpoint elements (h : Heap) : list A :=
   | Node x hs => x :: flat_map elements hs
   end.
 
+Fixpoint PH_strong_ind (P : Heap -> Prop) (HE : P Empty)
+  (Hind : forall x hs, Forall P hs -> P (Node x hs)) (h : Heap) : P h :=
+  match h with
+  | Empty => HE
+  | Node x hs =>
+      Hind x hs
+        ((fix f (hs : list Heap) : Forall P hs :=
+           match hs with
+           | [] => Forall_nil _
+           | h::hs => Forall_cons h (PH_strong_ind P HE Hind h) (f hs)
+           end) hs)
+  end.
+
 End Defs.
 End pairingHeap.
 
@@ -147,12 +160,101 @@ Proof.
     + apply IH.
 Qed.
 
+Lemma fold_left_min (l : list nat) (x : nat) :
+  Forall (fun y => x <= y) l ->
+  fold_left Nat.min l x = x.
+Proof.
+  induction l as [| y ys IH]; simpl; auto.
+  intros Hf.
+  inversion Hf as [| y' ys' Hxy Hys]; clear Hf; subst y';  
+  simpl in *.
+  destruct (Nat.leb_spec0 x y).
+  - rewrite Nat.min_l; [ now apply IH | assumption ].
+  - lia.
+Qed.
+
+Lemma heap_ordered_elements_nat (h : HeapNat) :
+  heap_ordered_nat h = true ->
+  match h with
+  | PH.Empty _     => True
+  | PH.Node _ x hs => Forall (fun y => x <= y) (flat_map elements_nat hs)
+  end.
+Proof.
+  intros Hord.
+  induction h as [ | x hs IH ] using PH.PH_strong_ind; simpl.
+  - (* h = Empty *) 
+    auto.
+  - (* h = Node x hs *)
+    simpl in Hord.
+    apply forallb_Forall in Hord as Hforall.
+    clear Hord.
+    induction Hforall as [ | h' hs' Hhd Htl IHtl ]; simpl.
+    + constructor.
+    + (* h' :: hs'  *)
+      apply Forall_app; split.
+      * destruct h' as [| y ys]; simpl in Hhd; [ constructor | ].
+        apply andb_true_iff in Hhd as [Hxy Hordh'].
+        simpl; constructor.
+        -- now apply Nat.leb_le in Hxy.
+        -- apply Forall_weaken with (P := fun y0 : nat => x <= y0).
+            --- lia.
+            --- assert (Forall (fun y0 : nat => x <= y0) (flat_map elements_nat ys)) as H2. {
+                  pose proof (Forall_inv IH) as IH_head.
+                  apply Forall_weaken with (P := fun y0 => y <= y0).
+                  - intros y0 Hle. apply Nat.leb_le in Hxy. lia.
+                  - apply IH_head. exact Hordh'.
+                }
+                apply H2.
+      * apply Forall_weaken with (P := fun y : nat => x <= y).
+            --- lia.
+            --- assert (Forall (fun y : nat => x <= y) (flat_map elements_nat hs')) as H2. {
+                  pose proof (Forall_inv IH) as IH_head.
+                  apply Forall_weaken with (P := fun y : nat => x <= y).
+                  - intros y0 Hle. exact Hle.
+                  - apply IHtl.
+                    apply Forall_cons_iff in IH.
+                    destruct IH as [_ IH].
+                    apply IH.
+                }
+                apply H2.
+Qed.
+
+Lemma heap_ordered_root_lb_all (x : nat) (hs : list HeapNat) :
+  heap_ordered_nat (PH.Node _ x hs) = true ->
+  Forall (fun y => x <= y) (flat_map elements_nat hs).
+Proof.
+  apply (heap_ordered_elements_nat (PH.Node _ x hs)).
+Qed.
+
 Lemma find_mind_correct_Some h a :
   heap_ordered_nat h = true ->
   find_min_nat h = Some a ->
   list_min (elements_nat h) = Some a.
 Proof.
-Admitted.
+  destruct h as [| x hs] eqn:E; simpl; [ congruence | ].
+  intros Hord Hfind; inversion Hfind; subst a.
+  unfold list_min; simpl.
+  f_equal.
+  apply fold_left_min, heap_ordered_root_lb_all; assumption.
+Qed.
+
+Definition hdOption {A} (ls : list A) : option A :=
+  match ls with
+  | [] => None
+  | x::_ => Some x
+  end.
+
+Lemma elements_nat_min h :
+  heap_ordered_nat h = true ->
+  hdOption (elements_nat h) = list_min (elements_nat h).
+Proof.
+  intros Hord.
+  destruct h as [| x hs]; simpl.
+    - reflexivity.
+    - unfold list_min; simpl.
+  set (Hle := heap_ordered_elements_nat (PH.Node _ x hs) Hord).
+  rewrite fold_left_min; [ reflexivity | exact Hle ].
+Qed.
 
 (* ---------- Proof that every singleton node is an ordered pairing heap ---------- *)
 Lemma singleton_node_heap_ordered (x : nat) :
