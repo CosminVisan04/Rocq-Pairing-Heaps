@@ -462,7 +462,7 @@ Proof.
   intros h x h' Hext.
   unfold extract_min_nat, PH.extract_min in Hext.
   destruct h as [| y hs].
-  - discriminate Hext.  (* extract_min = None for Empty heap *)
+  - discriminate Hext.
   - inversion Hext; subst x h'.
     simpl.
     rewrite <- pairwise_meld_permutation_elements.
