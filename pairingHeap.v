@@ -48,6 +48,12 @@ Definition delete_min (h : Heap) : Heap :=
 Definition insert (x : A) (h : Heap) : Heap :=
   meld (Node x []) h.
 
+Definition extract_min (h : Heap) : option (A * Heap) :=
+  match h with
+  | Empty => None
+  | Node x hs => Some (x, pairwise_meld hs)
+  end.
+
 (* ---------- Helper functions ---------- *)
 Fixpoint heap_ordered (h : Heap) : bool :=
   match h with
@@ -92,6 +98,7 @@ Definition meld_nat := PH.meld nat Nat.leb.
 Definition delete_min_nat := PH.delete_min nat Nat.leb.
 Definition insert_nat := PH.insert nat Nat.leb.
 Definition pairwise_meld_nat := PH.pairwise_meld nat Nat.leb.
+Definition extract_min_nat := PH.extract_min nat Nat.leb.
 
 (* ---------- Examples of pairing heaps ---------- *)
 Definition h0 : HeapNat := PH.Empty _.
@@ -421,4 +428,43 @@ Proof.
     simpl. apply Permutation_refl.
   - (* Case: Node x hs *)
     simpl. apply pairwise_meld_permutation_elements.
+Qed.
+
+(* ---------- Extract min proof ordered ---------- *)
+Lemma extract_min_preserves_heap_order :
+  forall h x h',
+    extract_min_nat h = Some (x, h') ->
+    heap_ordered_nat h = true ->
+    heap_ordered_nat h' = true.
+Proof.
+  intros h x h' Hext Hord.
+  unfold extract_min_nat, PH.extract_min in Hext.
+  destruct h as [| y hs].
+  - discriminate Hext.
+  - inversion Hext; subst x h'.
+    apply pairwise_meld_preserves_heap_order.
+    simpl in Hord.
+    apply forallb_Forall in Hord.
+    eapply Forall_weaken.
+    2: { apply Hord. }
+    clear.
+    intros h Hh.
+    destruct h as [| z zs]; auto.
+    simpl in Hh. apply andb_prop in Hh as [_ Hrec]. exact Hrec.
+Qed.
+
+(* ---------- Extract min proof elements ---------- *)
+Lemma extract_min_permutation_elements :
+  forall h x h',
+    extract_min_nat h = Some (x, h') ->
+    Permutation (elements_nat h) (x :: elements_nat h').
+Proof.
+  intros h x h' Hext.
+  unfold extract_min_nat, PH.extract_min in Hext.
+  destruct h as [| y hs].
+  - discriminate Hext.  (* extract_min = None for Empty heap *)
+  - inversion Hext; subst x h'.
+    simpl.
+    rewrite <- pairwise_meld_permutation_elements.
+    reflexivity.
 Qed.
