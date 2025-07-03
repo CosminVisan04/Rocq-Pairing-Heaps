@@ -1,4 +1,4 @@
-#Pairing Heaps in Rocq
+## Pairing Heaps in Rocq
 
 This repository contains a formalization of **pairing heaps** in **Rocq**, including:
 
