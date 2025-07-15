@@ -36,17 +36,17 @@ README.md      - Project overview and usage instructions
 
 ## How to install and run
 
-1️⃣ **Make sure you have Coq installed**  
-You can download it from the [official Coq website](https://coq.inria.fr/download).
+1️⃣ **Make sure you have Rocq installed**  
+You can download it from the [official Rocq website](https://coq.inria.fr/download).
 
 2️⃣ **Clone this repository**
 ```bash
 git clone https://github.com/cosminvisan04/rocq-pairing-heaps
 ```
 
-3️⃣ **Open `PairingHeap.v` in your Coq environment**
-- [CoqIDE](https://coq.inria.fr/coqide)
-- [VSCode + Coq extension](https://marketplace.visualstudio.com/items?itemName=siegebell.vscoq)
+3️⃣ **Open `PairingHeap.v` in your Rocq environment**
+- [RocqIDE](https://coq.inria.fr/coqide)
+- [VSCode + Rocq extension](https://marketplace.visualstudio.com/items?itemName=siegebell.vscoq)
 
 4️⃣ **Step through the proofs interactively**
 
