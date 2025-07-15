@@ -46,7 +46,7 @@ git clone https://github.com/cosminvisan04/rocq-pairing-heaps
 
 3️⃣ **Open `PairingHeap.v` in your Rocq environment**
 - [RocqIDE](https://coq.inria.fr/coqide)
-- [VSCode + Rocq extension](https://marketplace.visualstudio.com/items?itemName=siegebell.vscoq)
+- [VSCode + Rocq extension](https://marketplace.visualstudio.com/items?itemName=maximedenes.vscoq)
 
 4️⃣ **Step through the proofs interactively**
 
