@@ -49,3 +49,8 @@ git clone https://github.com/cosminvisan04/rocq-pairing-heaps
 - [VSCode + Coq extension](https://marketplace.visualstudio.com/items?itemName=siegebell.vscoq)
 
 4️⃣ **Step through the proofs interactively**
+
+
+## License
+
+This project is licensed under the BSD 2-Clause License. See the [LICENSE](./LICENSE) file for details.
